@@ -1,12 +1,16 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+// Check if we're in demo mode (no backend available)
+const isDemoMode = !import.meta.env.VITE_API_URL;
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 5000, // 5 second timeout
 });
 
 // Request interceptor to add auth token
@@ -22,7 +26,8 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    // In demo mode, don't redirect on 401 if backend is unavailable
+    if (!isDemoMode && error.response?.status === 401) {
       localStorage.removeItem('token');
       window.location.href = '/login';
     }
@@ -31,6 +36,7 @@ api.interceptors.response.use(
 );
 
 export default api;
+export { isDemoMode };
 
 // API Methods
 export const auth = {
@@ -79,11 +85,41 @@ export const analytics = {
     api.get('/analytics/timeline', { params: { period } }),
 };
 
-// Combined API export
+// Demo mode API wrapper
+const wrapWithDemo = <T extends (...args: any[]) => Promise<any>>(
+  apiCall: T,
+  demoData: any
+): T => {
+  return (async (...args: any[]) => {
+    if (isDemoMode) {
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      return { data: typeof demoData === 'function' ? demoData(...args) : demoData };
+    }
+    return apiCall(...args);
+  }) as T;
+};
+
+// Import mock data
+import { mockDashboardStats, mockLeads, mockUsers, mockLeadDetails } from './mockData';
+
+// Combined API export with demo mode support
 export const apiMethods = {
   auth,
-  leads,
-  users,
+  leads: {
+    ...leads,
+    getAll: wrapWithDemo(leads.getAll, mockLeads),
+    getById: wrapWithDemo(leads.getById, mockLeadDetails),
+  },
+  users: {
+    ...users,
+    getAll: wrapWithDemo(users.getAll, mockUsers),
+  },
   documents,
-  analytics,
+  analytics: {
+    ...analytics,
+    getDashboard: wrapWithDemo(analytics.getDashboard, mockDashboardStats),
+  },
 };
+
+export { wrapWithDemo };
