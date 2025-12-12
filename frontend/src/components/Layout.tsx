@@ -1,6 +1,6 @@
-import React, { ReactNode } from 'react';
+import { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, LayoutGrid, BarChart3, Settings, LogOut, Sun, User, Plug, Users } from 'lucide-react';
+import { Home, LayoutGrid, BarChart3, Settings, LogOut, User, Plug, Users } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 interface LayoutProps {

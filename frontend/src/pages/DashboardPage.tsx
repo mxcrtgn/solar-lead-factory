@@ -1,4 +1,4 @@
-import React from 'react';
+// import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiMethods as api } from '../lib/api';
 import { BarChart3, TrendingUp, Clock, CheckCircle, Zap, Target, Cpu, MapPin, Award, Sun, DollarSign, TrendingDown } from 'lucide-react';
@@ -92,7 +92,7 @@ export default function DashboardPage() {
   const revenueGoals = Array.isArray(stats?.revenueGoals) ? stats.revenueGoals : [];
 
   // Calculate CA embarqué vs objectif
-  const currentMonthGoal = stats?.currentMonthGoal;
+  // const currentMonthGoal = stats?.currentMonthGoal;
   const totalGoalRevenue = revenueGoals.reduce((sum: number, g: any) => sum + (g.revenueGoal || 0), 0);
   const totalAchievedRevenue = revenueGoals.reduce((sum: number, g: any) => sum + (g.revenueAchieved || 0), 0);
   const achievementRate = totalGoalRevenue > 0 ? ((totalAchievedRevenue / totalGoalRevenue) * 100) : 0;

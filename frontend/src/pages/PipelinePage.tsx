@@ -1,7 +1,7 @@
-import React, { useState, DragEvent } from 'react';
+import { useState, DragEvent } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiMethods as api } from '../lib/api';
-import { Plus, Users, BarChart3 } from 'lucide-react';
+import { Users, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -20,7 +20,7 @@ const STATUSES = [
 export default function PipelinePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const [draggedLead, setDraggedLead] = useState<any>(null);
   const [selectedUserId, setSelectedUserId] = useState<string>('all');
 
@@ -53,7 +53,7 @@ export default function PipelinePage() {
     },
   });
 
-  const handleDragStart = (e: DragEvent, lead: any) => {
+  const handleDragStart = (_e: DragEvent, lead: any) => {
     setDraggedLead(lead);
   };
 

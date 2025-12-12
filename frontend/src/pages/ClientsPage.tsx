@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Building2, TrendingUp, CheckCircle2, Clock, XCircle, Eye, Mail, Phone, MapPin, Zap } from 'lucide-react';
+// import { useState } from 'react';
+import { Building2, TrendingUp, CheckCircle2, Clock, XCircle, Eye, Mail, Phone, Zap } from 'lucide-react';
 
 const CLIENTS = [
   {
@@ -161,8 +161,8 @@ const CLIENTS = [
 ];
 
 export default function ClientsPage() {
-  const [selectedClient, setSelectedClient] = useState<string | null>(null);
-  const [filter, setFilter] = useState<'all' | 'active' | 'engaged'>('all');
+  // const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  // const [filter, setFilter] = useState<'all' | 'active' | 'engaged'>('all');
 
   const getStatusBadge = (status: string) => {
     const config = {
@@ -186,7 +186,7 @@ export default function ClientsPage() {
   const totalRevenue = CLIENTS.reduce((sum, c) => sum + c.totalRevenue, 0);
   const totalMWc = CLIENTS.reduce((sum, c) => sum + c.totalMWcSold, 0);
   const totalAcquired = CLIENTS.reduce((sum, c) => sum + c.leadsAcquired, 0);
-  const totalEngaged = CLIENTS.reduce((sum, c) => sum + c.leadsEngaged, 0);
+  // const totalEngaged = CLIENTS.reduce((sum, c) => sum + c.leadsEngaged, 0);
 
   return (
     <div className="max-w-7xl mx-auto">

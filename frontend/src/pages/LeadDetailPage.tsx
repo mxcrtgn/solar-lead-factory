@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiMethods as api } from '../lib/api';
 import {
   ArrowLeft, CheckCircle2, Circle, Cpu, MapPin, BarChart3,
-  FileText, TrendingUp, Network, Building2, DollarSign,
-  Shield, Zap, Target, Calendar, User
+  Network, Building2, DollarSign,
+  Shield, Zap, Target, User
 } from 'lucide-react';
 
 const PIPELINE_STAGES = [
@@ -171,7 +171,7 @@ export default function LeadDetailPage() {
           const stats = getStageStats(stage.id);
           const isCurrentStage = index === currentStageIndex;
           const isPastStage = index < currentStageIndex;
-          const isFutureStage = index > currentStageIndex;
+          // const isFutureStage = index > currentStageIndex;
           const isExpanded = activeStage === stage.id;
           const StageIcon = stage.icon;
 
@@ -227,7 +227,7 @@ export default function LeadDetailPage() {
               {isExpanded && checklist?.[stage.id] && (
                 <div className="px-6 pb-6 pt-2 border-t-2 border-gray-100">
                   <div className="space-y-2">
-                    {checklist[stage.id].map((item: any, idx: number) => (
+                    {checklist[stage.id].map((item: any) => (
                       <div
                         key={item.id}
                         className={`flex items-start gap-3 p-4 rounded-xl border-2 transition-all ${
