@@ -1,0 +1,425 @@
+// Prisma Schema pour LFS Lead Factory - SQLite version
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ========== USERS & AUTH ==========
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      String   @default("OPS") // "ADMIN", "MANAGER", "OPS", "COMMERCIAL"
+  avatar    String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  leadsCreated   Lead[]       @relation("LeadCreator")
+  leadsAssigned  Lead[]       @relation("LeadAssignee")
+  comments       Comment[]
+  notifications  Notification[]
+  activityLogs   ActivityLog[]
+}
+
+// ========== LEADS ==========
+
+model Lead {
+  id            String   @id @default(uuid())
+  internalName  String   @unique
+  status        String   @default("SOURCING")
+
+  // Localisation
+  commune       String
+  department    String
+  region        String
+  coordinates   String
+  cadastreRefs  String? // JSON string: ["AB 123", "AB 124"]
+  surfaceHa     Float
+
+  // Scores & Metadata
+  qualityScore  Int?
+  completeness  Int      @default(0)
+  estimatedMWc  Float?
+  estimatedTRI  Float?
+
+  // Business
+  salePrice     Float?   // Prix de vente du lead en €
+  soldAt        DateTime? // Date de vente du lead
+  soldTo        String?  // Client acheteur
+
+  // Timestamps & Users
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  createdBy     User     @relation("LeadCreator", fields: [createdById], references: [id])
+  createdById   String
+  assignedTo    User?    @relation("LeadAssignee", fields: [assignedToId], references: [id])
+  assignedToId  String?
+
+  // Relations
+  sourcing      Sourcing?
+  regulatory    Regulatory?
+  technical     Technical?
+  network       Network?
+  foncier       Foncier?
+  economic      Economic?
+  documents     Document[]
+  comments      Comment[]
+  activityLogs  ActivityLog[]
+  checklistItems ChecklistItem[]
+}
+
+// ========== SOURCING ==========
+
+model Sourcing {
+  id              String   @id @default(uuid())
+  leadId          String   @unique
+  lead            Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  identifiedDate  DateTime @default(now())
+  source          String?
+  satelliteImages String? // JSON string array
+  slope           Float?
+  landUse         String?
+  access          Boolean  @default(false)
+  shading         String?
+
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ========== REGULATORY ==========
+
+model Regulatory {
+  id                    String   @id @default(uuid())
+  leadId                String   @unique
+  lead                  Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // PLU
+  pluZone               String?
+  pluCompatible         Boolean?
+  pluDocumentUrl        String?
+
+  // Zonages environnementaux
+  natura2000            String?
+  natura2000Distance    Int?
+  natura2000Name        String?
+  monumentsHistoriques  String?
+  mhDistance            Int?
+  floodZone             String?
+  znieff                Boolean  @default(false)
+
+  // Agriculture
+  landClassification    String?
+  cdpenafRisk           String?
+
+  // Scoring
+  riskScore             Int?
+  estimatedPermitMonths Int?
+
+  // Jurisprudence (JSON string)
+  localProjects         String?
+
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ========== TECHNICAL ==========
+
+model Technical {
+  id                    String   @id @default(uuid())
+  leadId                String   @unique
+  lead                  Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Irradiation
+  irradiationSource     String?
+  ghi                   Float?
+  productionSpecific    Float?
+  monthlyDistribution   String? // JSON string
+  p50                   Float?
+  p75                   Float?
+  p90                   Float?
+
+  // Topographie
+  slopeAvg              Float?
+  slopeMax              Float?
+  orientation           String?
+  altitude              Float?
+
+  // Ombrage
+  shadingSources        String? // JSON string array
+  shadingLoss           Float?
+
+  // Géotechnique
+  soilType              String?
+  soilRisk              String?
+  costImpact            String?
+
+  // Dimensionnement
+  targetMWc             Float?
+  technology            String?
+  usableSurfaceRatio    Float?
+  panelCount            Int?
+  annualProductionP50   Float?
+  performanceRatio      Float?
+
+  layoutPlanUrl         String?
+
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ========== NETWORK ==========
+
+model Network {
+  id                    String   @id @default(uuid())
+  leadId                String   @unique
+  lead                  Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Poste source
+  substationName        String?
+  operator              String?
+  voltage               String?
+  distanceKm            Float?
+
+  // Capacité
+  s3renrDate            DateTime?
+  totalCapacityMVA      Float?
+  reservedMW            Float?
+  availableMW           Float?
+  queueCount            Int?
+  queueMW               Float?
+
+  // Raccordement
+  connectionType        String?
+  complexity            String?
+  tracePath             String? // JSON string
+
+  // Coûts
+  fixedCost             Float?
+  linearCostPerKm       Float?
+  totalConnectionCost   Float?
+  costPerMWc            Float?
+
+  // Délais
+  ptfMonths             Int?
+  studyMonths           Int?
+  workMonths            Int?
+  totalDelayMonths      Int?
+
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ========== FONCIER ==========
+
+model Foncier {
+  id                String   @id @default(uuid())
+  leadId            String   @unique
+  lead              Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Propriétaire (chiffré)
+  ownerIdentified   Boolean  @default(false)
+  ownerType         String?
+  ownerNameEnc      String?
+  ownerEmailEnc     String?
+  ownerPhoneEnc     String?
+
+  // Statut contact
+  contactStatus     String?
+  contactHistory    String? // JSON string
+
+  // Transaction
+  transactionType   String?
+  leaseDurationYears Int?
+  rentPerHaYear     Float?
+  totalRentYear     Float?
+  salePrice         Float?
+
+  // Servitudes (JSON string)
+  servitudes        String?
+
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ========== ECONOMIC ==========
+
+model Economic {
+  id                    String   @id @default(uuid())
+  leadId                String   @unique
+  lead                  Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  // Hypothèses
+  operationYears        Int      @default(25)
+  discountRate          Float    @default(6)
+  inflationRate         Float    @default(2)
+  degradationRate       Float    @default(0.5)
+
+  // CAPEX
+  capexPanels           Float?
+  capexInverters        Float?
+  capexStructures       Float?
+  capexCivilWorks       Float?
+  capexConnection       Float?
+  capexStudies          Float?
+  capexMOE              Float?
+  capexContingency      Float?
+  totalCapex            Float?
+
+  // OPEX
+  opexOM                Float?
+  opexInsurance         Float?
+  opexLease             Float?
+  opexAssetMgmt         Float?
+  opexIFER              Float?
+  opexTaxes             Float?
+  totalOpexYear         Float?
+
+  // Revenus
+  revenueScheme         String?
+  electricityPrice      Float?
+  contractYears         Int?
+  annualRevenueYear1    Float?
+
+  // Indicateurs
+  tri                   Float?
+  van                   Float?
+  paybackYears          Float?
+  lcoe                  Float?
+
+  // Sensibilité (JSON string)
+  sensitivityData       String?
+
+  excelModelUrl         String?
+
+  notes                 String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// ========== DOCUMENTS ==========
+
+model Document {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  name        String
+  category    String
+  fileUrl     String
+  fileType    String
+  fileSize    Int
+
+  uploadedBy  String
+  uploadedAt  DateTime @default(now())
+}
+
+// ========== COMMENTS ==========
+
+model Comment {
+  id        String   @id @default(uuid())
+  leadId    String
+  lead      Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  content   String
+  section   String?
+  resolved  Boolean  @default(false)
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ========== ACTIVITY LOG ==========
+
+model ActivityLog {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  action      String
+  description String
+  metadata    String? // JSON string
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+
+// ========== NOTIFICATIONS ==========
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  type      String
+  title     String
+  message   String
+  linkUrl   String?
+
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// ========== CHECKLISTS ==========
+
+model ChecklistItem {
+  id          String   @id @default(uuid())
+  leadId      String
+  lead        Lead     @relation(fields: [leadId], references: [id], onDelete: Cascade)
+
+  stage       String   // SOURCING, REGULATORY_ANALYSIS, TECHNICAL_STUDY, etc.
+  label       String
+  description String?
+  order       Int
+
+  completed   Boolean  @default(false)
+  completedAt DateTime?
+  completedBy String?
+
+  aiAssisted  Boolean  @default(false)
+  dataSource  String?  // "AI_ANALYSIS", "MANUAL", "API_IGN", "API_ENEDIS", etc.
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ========== REVENUE TRACKING ==========
+
+model RevenueGoal {
+  id          String   @id @default(uuid())
+  year        Int
+  month       Int
+
+  // Objectifs mensuels
+  leadGoal    Int      // Nombre de leads objectif
+  revenueGoal Float    // CA objectif en €
+
+  // Réalisé
+  leadsAchieved Int    @default(0)
+  revenueAchieved Float @default(0)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([year, month])
+}
